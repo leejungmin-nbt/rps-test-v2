@@ -1,0 +1,6 @@
+// Forward barrel — single import surface for all design tokens.
+// Usage: @use 'styles/tokens' as t; then t.$color-brand-primary, @include t.t-title-bold;
+
+@forward 'primitive';
+@forward 'semantic';
+@forward 'typography';

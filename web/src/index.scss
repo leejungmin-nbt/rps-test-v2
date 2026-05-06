@@ -1,0 +1,74 @@
+@use 'styles/tokens' as t;
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  @include t.t-body1-regular;
+  background: t.$color-bg-strong;
+  color: t.$color-text-normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+h1 {
+  @include t.t-title-bold;
+  color: t.$color-text-strong;
+}
+
+h2 {
+  @include t.t-subtitle-semibold;
+  color: t.$color-text-strong;
+}
+
+a {
+  color: t.$color-brand-primary;
+  text-decoration: none;
+
+  &:hover {
+    color: t.$color-brand-primary-strong;
+    text-decoration: underline;
+  }
+}
+
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: t.$color-fill-solid-normal;
+  color: t.$color-text-minor;
+}
+
+button {
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+}

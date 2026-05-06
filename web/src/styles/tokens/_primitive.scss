@@ -1,0 +1,52 @@
+// Foundation/Color/Primitive — Figma node 11454-60609
+// Adison Core SDK — Raw color palette. Do not consume directly in components;
+// use semantic tokens from _semantic.scss instead.
+
+// Common
+$color-common-white: #ffffff;
+$color-common-black: #000000;
+
+// Blue
+$color-blue-50: #f7fbff;
+$color-blue-100: #f0f7ff;
+$color-blue-200: #dcebfc;
+$color-blue-300: #d5e6fb;
+$color-blue-400: #aacffc;
+$color-blue-500: #61a3f1;
+$color-blue-600: #2d83e9;
+$color-blue-700: #1567c8;
+$color-blue-800: #003496;
+$color-blue-900: #001b7a;
+$color-blue-950: #000050;
+
+// Gray
+$color-gray-50: #fcfcfc;
+$color-gray-100: #f8f8f8;
+$color-gray-200: #e8e8e8;
+$color-gray-300: #e0e0e0;
+$color-gray-400: #c9c9c9;
+$color-gray-500: #a6a6a6;
+$color-gray-600: #8c8c8c;
+$color-gray-700: #676767;
+$color-gray-800: #3a3a3a;
+$color-gray-850: #2a2a2a;
+$color-gray-900: #1a1a1a;
+$color-gray-950: #121212;
+
+// Red
+$color-red-500: #f55d5d;
+$color-red-600: #ec4644;
+
+// Status (from semantic palette source)
+$color-green-500: #4fc087;
+$color-orange-500: #ffa927;
+
+// Alpha — Gray
+$color-gray-alpha-5: #a6a6a60d;
+$color-gray-alpha-10: #a6a6a61a;
+$color-gray-alpha-20: #a6a6a633;
+$color-gray-alpha-40: #a6a6a666;
+
+// Alpha — Black
+$color-black-alpha-50: #00000080;
+$color-black-alpha-70: #000000b2;

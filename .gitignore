@@ -1,0 +1,24 @@
+node_modules/
+**/node_modules/
+.firebase/
+**/lib/
+**/dist/
+*.log
+
+# 환경 변수 (firebaseConfig 등)
+.env
+.env.local
+.env.development
+.env.production
+.env.*
+!.env.example
+
+.DS_Store
+
+# 개인 환경 / 에디터 / Claude 캐시
+.claude/
+.omc/
+.vscode/
+
+# 부하 테스트 결과 (로컬 분석용)
+scripts/results/

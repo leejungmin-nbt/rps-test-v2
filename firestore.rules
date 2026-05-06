@@ -1,0 +1,99 @@
+rules_version = '2';
+
+// =====================================================================
+// Firestore 보안 규칙 — 가위바위보 챌린지 v2
+// =====================================================================
+// docs/guide/06 (데이터 모델 및 보안 정책) §6.10 정본 기준.
+//
+// 핵심 원칙:
+//   1. 단일 서버 쓰기 게이트웨이 — 모든 도메인 쓰기는 Cloud Functions 만 수행.
+//      클라이언트 직접 쓰기는 본 규칙에서 전체 차단(`allow write: if false`).
+//   2. 공개 / 본인 only / 서버 only 3단계 영역 분리.
+//   3. 공개 문서는 read 가 허용되면 모든 필드가 노출되므로,
+//      "공개 가능한 필드만 저장한다" 가 보안 정책의 핵심.
+// =====================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ----- 헬퍼 -----
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.admin == true;
+    }
+
+    // ----- appState/activeGameId (활성 게임 포인터) -----
+
+    match /appState/{docId} {
+      allow get: if docId == "activeGameId";
+      allow list: if false;
+      // Admin custom claims 가 부여된 운영자만 활성 게임 포인터 갱신 가능
+      allow create, update, delete: if docId == "activeGameId" && isAdmin();
+    }
+
+    // ----- games/{gameId} (게임 공통 상태 — 공개 read) -----
+
+    match /games/{gameId} {
+      // 공개 read. 단, 공개 가능한 필드만 저장한다는 데이터 모델 계약 위에 성립.
+      allow get: if true;
+      allow list: if false;
+      // 클라이언트 직접 쓰기 금지. Cloud Functions(Admin SDK)만 갱신 가능.
+      allow create, update, delete: if false;
+
+      // ----- games/{gameId}/players/{userId} (참가자 — 본인만 read) -----
+
+      match /players/{userId} {
+        // 본인 + Admin 만. 다른 플레이어 문서는 못 읽음.
+        allow get: if signedIn() && (request.auth.uid == userId || isAdmin());
+        allow list: if false;
+        // 클라이언트 직접 쓰기 금지. joinGame / submitChoice / processBatch 만 갱신.
+        allow create, update, delete: if false;
+      }
+
+      // ----- games/{gameId}/rounds/{roundId} (라운드 상태 + 공개 집계) -----
+
+      match /rounds/{roundId} {
+        // 공개 read. 개인 선택값 / UID 는 저장 금지 (집계만).
+        allow get: if true;
+        allow list: if false;
+        allow create, update, delete: if false;
+
+        // ----- games/{gameId}/rounds/{n}/batches/{i} (배치 처리 상태 — restricted) -----
+
+        match /batches/{batchId} {
+          allow read, write: if isAdmin();
+        }
+      }
+
+      // ----- games/{gameId}/claims/{adisonUidHash} (중복 차단 — restricted) -----
+
+      match /claims/{claimId} {
+        allow read, write: if isAdmin();
+      }
+
+      // ----- games/{gameId}/counters/alive_{0~9} (분산 샤드 카운터 — restricted) -----
+
+      match /counters/{counterId} {
+        allow read, write: if isAdmin();
+      }
+
+      // ----- games/{gameId}/result/{docId} (우승 결과 — restricted) -----
+
+      match /result/{docId} {
+        // 우승자 본인 read 허용 여부는 docs/guide/13 미결정 사항.
+        // 현재는 Admin/Functions only. 추후 winnerId == request.auth.uid 조건 검토.
+        allow read, write: if isAdmin();
+      }
+
+      // ----- games/{gameId}/winnerPrivate/{docId} (우승자 개인정보 — restricted) -----
+
+      match /winnerPrivate/{docId} {
+        allow read, write: if isAdmin();
+      }
+    }
+  }
+}

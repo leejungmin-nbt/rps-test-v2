@@ -1,0 +1,75 @@
+// Foundation/Color/Semantic — Figma node 10944-7584
+// Adison Core SDK — Semantic color tokens. Components should consume these.
+
+@use 'primitive' as *;
+
+// Brand — Adison
+$color-brand-primary: $color-blue-600; // #2d83e9
+$color-brand-primary-strong: $color-blue-700; // #1567c8
+$color-brand-on-primary: $color-common-white;
+
+// Text
+$color-text-strong: $color-common-black; // #000000
+$color-text-normal: $color-gray-900; // #1a1a1a
+$color-text-minor: $color-gray-700; // #676767
+$color-text-describe: $color-gray-500; // #a6a6a6
+$color-text-placeholder: $color-gray-400; // #c9c9c9
+$color-text-disable: $color-gray-alpha-40; // #a6a6a666
+
+// Background
+$color-bg-normal: $color-common-white; // #ffffff
+$color-bg-strong: #f2f2f2;
+$color-bg-alternative: #f2f2f2;
+$color-bg-elevated-normal: $color-common-white;
+
+// Line
+$color-line-solid-normal: $color-gray-200; // #e8e8e8
+$color-line-normal: $color-gray-alpha-20; // #a6a6a633
+$color-line-normal-alternative: $color-gray-alpha-10; // #a6a6a61a
+
+// Fill
+$color-fill-normal-normal: $color-gray-alpha-10; // #a6a6a61a
+$color-fill-normal-alternative: $color-gray-alpha-5; // #a6a6a60d
+$color-fill-normal-strong: $color-gray-alpha-20; // #a6a6a633
+$color-fill-solid-normal: $color-gray-100; // #f8f8f8
+$color-fill-solid-strong: $color-gray-300; // #e0e0e0
+
+// Interaction
+$color-interaction-inactive: $color-gray-500;
+$color-interaction-disabled: $color-gray-alpha-20;
+$color-interaction-error: $color-red-600; // #ec4644
+
+// Status
+$color-status-normal: $color-blue-600; // #2d83e9
+$color-status-positive: $color-green-500; // #4fc087
+$color-status-cautionary: $color-orange-500; // #ffa927
+$color-status-negative: $color-red-600; // #ec4644
+
+// Icon
+$color-icon-normal: $color-gray-700;
+$color-icon-strong: $color-gray-950;
+$color-icon-alternative: $color-gray-500;
+$color-icon-inactive: $color-gray-300;
+
+// Static
+$color-static-white: $color-common-white;
+$color-static-black: $color-common-black;
+$color-static-gray: $color-gray-100;
+$color-static-accent: $color-red-500;
+
+// Inverse
+$color-inverse-black: $color-gray-950;
+$color-inverse-white: $color-common-white;
+
+// Overlay
+$color-overlay-normal: $color-black-alpha-50; // #00000080
+$color-overlay-strong: $color-black-alpha-70; // #000000b2
+
+// Shadow / Elevation
+$shadow-normal:
+  0 4px 20px 0 rgba(0, 0, 0, 0.06),
+  0 2px 8px 0 rgba(0, 0, 0, 0.02);
+
+$shadow-alternative:
+  0 1px 4px 0 rgba(0, 0, 0, 0.06),
+  0 1px 2px 0 rgba(0, 0, 0, 0.02);

@@ -1,0 +1,375 @@
+@use 'styles/tokens' as t;
+@use 'styles/radius' as r;
+
+// ─────────────────────────────────────────────────────────────
+// Layout
+// ─────────────────────────────────────────────────────────────
+.container {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 24px 20px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.title {
+  @include t.t-title-bold;
+  color: t.$color-text-strong;
+}
+
+.titleLarge {
+  @include t.t-display-bold;
+  font-size: 32px;
+  line-height: 40px;
+  color: t.$color-text-strong;
+}
+
+.subtitle {
+  @include t.t-body3-regular;
+  color: t.$color-text-minor;
+}
+
+.helper {
+  @include t.t-label-regular;
+  color: t.$color-text-describe;
+}
+
+.metaRow {
+  @include t.t-caption-regular;
+  color: t.$color-text-describe;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+
+  code {
+    @include t.t-caption-regular;
+    color: t.$color-text-minor;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Panel — base + accent variants
+// ─────────────────────────────────────────────────────────────
+.panel {
+  background: t.$color-bg-elevated-normal;
+  border: 1px solid t.$color-line-solid-normal;
+  border-radius: r.$radius-lg;
+  padding: 20px;
+  box-shadow: t.$shadow-alternative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.panelHeader {
+  @include t.t-subtitle-semibold;
+  color: t.$color-text-strong;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panelBody {
+  @include t.t-body2-regular;
+  color: t.$color-text-normal;
+
+  b,
+  strong {
+    color: t.$color-text-strong;
+    font-weight: 700;
+  }
+}
+
+.panelMuted {
+  @include t.t-body3-regular;
+  color: t.$color-text-minor;
+}
+
+// Variants — left accent bar + tinted background
+@mixin panel-variant($accent, $tint) {
+  border-left: 4px solid $accent;
+  background: $tint;
+}
+
+.panelInfo {
+  @include panel-variant(t.$color-status-normal, t.$color-blue-50);
+}
+
+.panelSuccess {
+  @include panel-variant(t.$color-status-positive, #f1faf4);
+}
+
+.panelWarning {
+  @include panel-variant(t.$color-status-cautionary, #fff8eb);
+}
+
+.panelDanger {
+  @include panel-variant(t.$color-status-negative, #fdecec);
+}
+
+.panelBrand {
+  @include panel-variant(t.$color-brand-primary, t.$color-blue-50);
+}
+
+.panelNeutral {
+  background: t.$color-fill-solid-normal;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Buttons
+// ─────────────────────────────────────────────────────────────
+.button {
+  @include t.t-body2-semibold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 16px;
+  border-radius: r.$radius-md;
+  border: 1px solid t.$color-line-solid-normal;
+  background: t.$color-bg-elevated-normal;
+  color: t.$color-text-normal;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease;
+
+  &:hover:not(:disabled) {
+    background: t.$color-fill-solid-normal;
+  }
+
+  &:disabled {
+    color: t.$color-text-disable;
+    background: t.$color-interaction-disabled;
+    cursor: not-allowed;
+    border-color: transparent;
+  }
+}
+
+.buttonPrimary {
+  @include t.t-body1-semibold;
+  padding: 14px 20px;
+  width: 100%;
+  background: t.$color-brand-primary;
+  border-color: t.$color-brand-primary;
+  color: t.$color-brand-on-primary;
+  border-radius: r.$radius-md;
+
+  &:hover:not(:disabled) {
+    background: t.$color-brand-primary-strong;
+    border-color: t.$color-brand-primary-strong;
+  }
+
+  &:disabled {
+    background: t.$color-interaction-disabled;
+    border-color: transparent;
+    color: t.$color-text-disable;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Form
+// ─────────────────────────────────────────────────────────────
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  @include t.t-label-semibold;
+  color: t.$color-text-minor;
+}
+
+.input {
+  @include t.t-body2-regular;
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: r.$radius-md;
+  border: 1px solid t.$color-line-solid-normal;
+  background: t.$color-bg-elevated-normal;
+  color: t.$color-text-strong;
+  outline: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+
+  &::placeholder {
+    color: t.$color-text-placeholder;
+  }
+
+  &:focus {
+    border-color: t.$color-brand-primary;
+    box-shadow: 0 0 0 3px rgba(45, 131, 233, 0.18);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// Game — countdown / timer / choices / round result
+// ─────────────────────────────────────────────────────────────
+.countdown {
+  @include t.t-display-bold;
+  font-size: 64px;
+  line-height: 1;
+  color: t.$color-status-cautionary;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.timer {
+  @include t.t-title-bold;
+  font-size: 28px;
+  line-height: 1;
+  color: t.$color-status-normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.aiHand {
+  @include t.t-display-bold;
+  font-size: 56px;
+  line-height: 1;
+  text-align: center;
+  padding: 12px 0;
+}
+
+.choiceRow {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.choiceBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  line-height: 1;
+  padding: 18px 0;
+  border-radius: r.$radius-lg;
+  border: 2px solid t.$color-line-solid-normal;
+  background: t.$color-bg-elevated-normal;
+  cursor: pointer;
+  transition:
+    transform 120ms ease,
+    border-color 120ms ease,
+    background 120ms ease,
+    box-shadow 120ms ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: t.$color-brand-primary;
+    box-shadow: t.$shadow-alternative;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.choiceBtnSelected {
+  border-color: t.$color-brand-primary;
+  background: t.$color-blue-50;
+  box-shadow: 0 0 0 3px rgba(45, 131, 233, 0.18);
+}
+
+.spectator {
+  @include t.t-body2-regular;
+  color: t.$color-text-describe;
+  text-align: center;
+  padding: 10px 0;
+}
+
+.resultPositive {
+  @include t.t-subtitle-semibold;
+  color: t.$color-status-positive;
+}
+
+.resultNegative {
+  @include t.t-subtitle-semibold;
+  color: t.$color-status-negative;
+}
+
+.resultMuted {
+  @include t.t-body2-regular;
+  color: t.$color-text-describe;
+}
+
+.warningCallout {
+  @include t.t-body3-regular;
+  background: #fff8eb;
+  border: 1px solid #f7e5b8;
+  border-radius: r.$radius-md;
+  padding: 10px 12px;
+  color: #8a5a00;
+}
+
+.winnerCelebrate {
+  @include t.t-subtitle-semibold;
+  color: t.$color-status-cautionary;
+  background: #fff8eb;
+  border-radius: r.$radius-md;
+  padding: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Round stats
+// ─────────────────────────────────────────────────────────────
+.statsLine {
+  @include t.t-body3-regular;
+  color: t.$color-text-normal;
+
+  b {
+    color: t.$color-text-strong;
+  }
+}
+
+.statsList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Error page
+// ─────────────────────────────────────────────────────────────
+.errorTitle {
+  @include t.t-title-bold;
+  color: t.$color-status-negative;
+}
+
+.errorDescription {
+  @include t.t-body2-regular;
+  color: t.$color-text-minor;
+}
+
+.errorBack {
+  @include t.t-body3-semibold;
+  color: t.$color-brand-primary;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Util
+// ─────────────────────────────────────────────────────────────
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.center {
+  text-align: center;
+}

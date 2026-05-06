@@ -1,0 +1,133 @@
+// Foundation/Typography — Figma node 3470-29725
+// Adison Core SDK — Typography tokens. Mixins apply font-family, size,
+// weight, line-height and letter-spacing in one shot.
+
+$font-family-base:
+  'Noto Sans KR',
+  -apple-system,
+  system-ui,
+  'Segoe UI',
+  Roboto,
+  sans-serif;
+
+// Weights
+$font-weight-regular: 400;
+$font-weight-medium: 500;
+$font-weight-semibold: 500; // Figma "Medium" maps to Semibold tokens in this system
+$font-weight-bold: 700;
+
+// ─────────────────────────────────────────────────────────────
+// Display / Title / SubTitle — heading scale
+// ─────────────────────────────────────────────────────────────
+@mixin t-display-bold {
+  font-family: $font-family-base;
+  font-size: 56px;
+  line-height: 72px;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0;
+}
+
+@mixin t-title-bold {
+  font-family: $font-family-base;
+  font-size: 20px;
+  line-height: 28px;
+  font-weight: $font-weight-bold;
+  letter-spacing: 0;
+}
+
+@mixin t-subtitle-semibold {
+  font-family: $font-family-base;
+  font-size: 18px;
+  line-height: 24px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: -0.36px; // -2% of 18
+}
+
+// ─────────────────────────────────────────────────────────────
+// Body
+// ─────────────────────────────────────────────────────────────
+@mixin t-body1-regular {
+  font-family: $font-family-base;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: $font-weight-regular;
+  letter-spacing: 0;
+}
+
+@mixin t-body1-semibold {
+  font-family: $font-family-base;
+  font-size: 16px;
+  line-height: 24px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0;
+}
+
+@mixin t-body2-regular {
+  font-family: $font-family-base;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: $font-weight-regular;
+  letter-spacing: 0;
+}
+
+@mixin t-body2-semibold {
+  font-family: $font-family-base;
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: 0;
+}
+
+@mixin t-body3-regular {
+  font-family: $font-family-base;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.28px; // -2%
+}
+
+@mixin t-body3-semibold {
+  font-family: $font-family-base;
+  font-size: 14px;
+  line-height: 20px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: -0.42px; // -3%
+}
+
+// ─────────────────────────────────────────────────────────────
+// Label
+// ─────────────────────────────────────────────────────────────
+@mixin t-label-regular {
+  font-family: $font-family-base;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.26px; // -2%
+}
+
+@mixin t-label-semibold {
+  font-family: $font-family-base;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: -0.26px;
+}
+
+// ─────────────────────────────────────────────────────────────
+// Caption
+// ─────────────────────────────────────────────────────────────
+@mixin t-caption-regular {
+  font-family: $font-family-base;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: $font-weight-regular;
+  letter-spacing: -0.22px;
+}
+
+@mixin t-caption-semibold {
+  font-family: $font-family-base;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: $font-weight-semibold;
+  letter-spacing: -0.22px;
+}
