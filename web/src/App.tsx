@@ -1,9 +1,8 @@
 // =====================================================================
 // 가위바위보 챌린지 v2 — 클라이언트 진입점
 // =====================================================================
-// 본 파일은 라우팅 + 5종 URL 파라미터 검증 + 익명 Auth 까지 처리한다.
-// 페이즈별 게임 화면(waiting/countdown/select/reveal/ended)은 M3
-// (T10~T13) 에서 본격 구현한다.
+// 라우팅 + 5종 URL 파라미터 검증 + 익명 Auth + joinGame 호출까지 처리.
+// 페이즈별 게임 화면(countdown/select/reveal/ended)은 M3 (T11~T13) 에서 구현.
 //
 // 라우팅:
 //   /         → 검증용 진입 폼 (uid/click_key 등 5종 파라미터 입력)
@@ -11,11 +10,38 @@
 //   기타       → ErrorPage
 // =====================================================================
 
+import { httpsCallable } from 'firebase/functions'
 import { useEffect, useState } from 'react'
 
 import s from './App.module.scss'
-import { ensureAnonymousAuth } from './firebase'
+import { ensureAnonymousAuth, functions } from './firebase'
 import type { UrlParams } from './types'
+
+// =====================================================================
+// joinGame Callable 핸들러
+// =====================================================================
+// docs/guide/06/07/08 정본의 입장 트랜잭션 호출.
+type JoinGameRequest = {
+  gameId: string
+  uid: string
+  advertising_id: string | null
+  click_key: string
+  pub_code: string
+  pub_app_code: string
+  nickname?: string
+}
+
+type JoinGameResponse =
+  | { status: 'joined' | 'rejoined'; playerId: string; aliveShardIndex: number; phase: string; currentRound: number }
+  | { status: 'rejected_already_in_other_session'; phase: string; currentRound: number }
+  | { status: 'rejected_other_adison_uid'; phase: string; currentRound: number }
+  | { status: 'rejected_phase'; phase: string; currentRound: number; reason: string }
+  | { status: 'rejected_full'; phase: string; currentRound: number; capacity: number; aliveCount: number }
+
+const joinGameFn = httpsCallable<JoinGameRequest, JoinGameResponse>(functions, 'joinGame')
+
+// 활성 게임 ID — 검증 단계엔 'active' 단일 사용
+const ACTIVE_GAME_ID = 'active'
 
 // =====================================================================
 // 라우팅 — pathname + 쿼리파라미터로 화면 분기
@@ -40,13 +66,7 @@ export default function App() {
 }
 
 // =====================================================================
-// URL 파라미터 파싱 — 5종 (uid, advertising_id, click_key, pub_code, pub_app_code)
-// =====================================================================
-// docs/guide/06 §6.6 정본:
-//   - uid, click_key, pub_code, pub_app_code 4종은 필수
-//   - advertising_id 는 nullable
-//   - 모든 값은 trim 후 빈 문자열 거부
-//   - 길이 제한은 보수적으로 1~256자 (DoS 방지 + 비정상 입력 차단)
+// URL 파라미터 파싱
 // =====================================================================
 const MAX_PARAM_LENGTH = 256
 
@@ -58,10 +78,7 @@ function parseUrlParams(search: string): UrlParams | null {
   const pub_code = sp.get('pub_code')?.trim() ?? ''
   const pub_app_code = sp.get('pub_app_code')?.trim() ?? ''
 
-  // 필수 4종
   if (!uid || !click_key || !pub_code || !pub_app_code) return null
-
-  // 길이 검증 (DoS · 비정상 입력 차단)
   if (
     uid.length > MAX_PARAM_LENGTH ||
     click_key.length > MAX_PARAM_LENGTH ||
@@ -76,7 +93,7 @@ function parseUrlParams(search: string): UrlParams | null {
 }
 
 // =====================================================================
-// 진입 페이지 (검증용) — 5종 파라미터 랜덤 생성 + 입장
+// 진입 페이지 (검증용)
 // =====================================================================
 function RegisterPage() {
   const [uid, setUid] = useState('')
@@ -142,17 +159,16 @@ function RegisterPage() {
 }
 
 // =====================================================================
-// 이벤트 페이지 — 익명 Auth 발급 후 게임 화면 진입
+// 이벤트 페이지 — 익명 Auth → joinGame 호출 → 결과 분기
 // =====================================================================
-// 흐름:
-//   1. 익명 Auth 로그인 (sessionStorage persistence — 탭별 독립)
-//   2. (M3 에서 추가) joinGame Callable 호출 → 입장 처리
-//   3. (M3 에서 추가) games/active onSnapshot 구독 → 페이즈별 화면 분기
-// =====================================================================
+type Stage =
+  | { kind: 'auth_loading' }
+  | { kind: 'join_loading'; firebaseUid: string }
+  | { kind: 'join_done'; firebaseUid: string; result: JoinGameResponse }
+  | { kind: 'error'; message: string }
+
 function EventPage({ params }: { params: UrlParams }) {
-  const [authStatus, setAuthStatus] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [firebaseUid, setFirebaseUid] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [stage, setStage] = useState<Stage>({ kind: 'auth_loading' })
 
   useEffect(() => {
     let cancelled = false
@@ -161,38 +177,68 @@ function EventPage({ params }: { params: UrlParams }) {
       try {
         const user = await ensureAnonymousAuth()
         if (cancelled) return
-        setFirebaseUid(user.uid)
-        setAuthStatus('ready')
+        setStage({ kind: 'join_loading', firebaseUid: user.uid })
+
+        const res = await joinGameFn({
+          gameId: ACTIVE_GAME_ID,
+          uid: params.uid,
+          advertising_id: params.advertising_id,
+          click_key: params.click_key,
+          pub_code: params.pub_code,
+          pub_app_code: params.pub_app_code
+        })
+        if (cancelled) return
+
+        setStage({ kind: 'join_done', firebaseUid: user.uid, result: res.data })
       } catch (e) {
         if (cancelled) return
-        setError((e as Error).message)
-        setAuthStatus('error')
+        setStage({ kind: 'error', message: (e as Error).message })
       }
     })()
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [params])
 
-  if (authStatus === 'error') {
-    return <ErrorPage title='⚠ 인증 실패' description={error ?? '익명 로그인 처리 중 문제가 발생했습니다.'} />
+  if (stage.kind === 'error') {
+    return <ErrorPage title='⚠ 입장 실패' description={stage.message} />
   }
 
-  if (authStatus === 'loading') {
+  if (stage.kind === 'auth_loading' || stage.kind === 'join_loading') {
     return (
       <div className={s.container}>
         <h1 className={s.title}>가위바위보 챌린지</h1>
         <section className={`${s.panel} ${s.panelInfo}`}>
-          <div className={s.panelBody}>입장 처리 중...</div>
+          <div className={s.panelBody}>
+            {stage.kind === 'auth_loading' ? '익명 로그인 중...' : '입장 처리 중...'}
+          </div>
         </section>
       </div>
     )
   }
 
+  // join_done — status 별 분기
+  return <JoinResultView params={params} firebaseUid={stage.firebaseUid} result={stage.result} />
+}
+
+// =====================================================================
+// joinGame 결과 화면
+// =====================================================================
+function JoinResultView({
+  params,
+  firebaseUid,
+  result
+}: {
+  params: UrlParams
+  firebaseUid: string
+  result: JoinGameResponse
+}) {
+  const isJoined = result.status === 'joined' || result.status === 'rejoined'
+
   return (
     <div className={s.container}>
-      <h1 className={s.title}>이벤트 페이지 (M1 — Auth 완료)</h1>
+      <h1 className={s.title}>이벤트 페이지 (M2 — joinGame 호출 완료)</h1>
 
       <section className={`${s.panel} ${s.panelInfo}`}>
         <div className={s.panelHeader}>전달받은 URL 파라미터</div>
@@ -216,13 +262,42 @@ function EventPage({ params }: { params: UrlParams }) {
       </section>
 
       <section className={`${s.panel} ${s.panelInfo}`}>
-        <div className={s.panelHeader}>Firebase 인증 상태</div>
+        <div className={s.panelHeader}>Firebase 인증</div>
         <div className={s.panelBody}>
           <div>
             익명 UID: <code>{firebaseUid}</code>
           </div>
-          <div className={s.helper}>다음 단계: M2 에서 joinGame 호출 + 페이즈 화면 구현 예정</div>
         </div>
+      </section>
+
+      <section className={`${s.panel} ${isJoined ? s.panelBrand : s.panelDanger}`}>
+        <div className={s.panelHeader}>joinGame 결과</div>
+        <div className={s.panelBody}>
+          <div>
+            status: <b>{result.status}</b>
+          </div>
+          <div>
+            phase: <code>{result.phase}</code> | currentRound: <code>{result.currentRound}</code>
+          </div>
+          {result.status === 'joined' || result.status === 'rejoined' ? (
+            <div>
+              playerId: <code>{result.playerId}</code> | aliveShardIndex: <code>{result.aliveShardIndex}</code>
+            </div>
+          ) : null}
+          {result.status === 'rejected_phase' && (
+            <div className={s.helper}>거부 사유: {result.reason}</div>
+          )}
+          {result.status === 'rejected_full' && (
+            <div className={s.helper}>
+              정원 초과 — capacity {result.capacity} / aliveCount {result.aliveCount}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className={`${s.panel} ${s.panelInfo}`}>
+        <div className={s.panelHeader}>다음 단계 (M3)</div>
+        <div className={s.panelBody}>페이즈별 화면 (countdown / select / reveal / ended) 은 T10~T13 에서 구현.</div>
       </section>
     </div>
   )
