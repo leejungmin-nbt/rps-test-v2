@@ -1,0 +1,23 @@
+{
+  "name": "adison-rps-event-v2",
+  "private": true,
+  "version": "0.1.0",
+  "description": "가위바위보 챌린지 v2 — docs/guide 정본 기반 상용 빌드",
+  "scripts": {
+    "install:all": "cd functions && npm install && cd ../web && npm install",
+    "build:functions": "cd functions && npm run build",
+    "build:web": "cd web && npm run build",
+    "build": "npm run build:functions && npm run build:web",
+    "lint:functions": "cd functions && npm run lint",
+    "lint:web": "cd web && npm run lint",
+    "lint": "npm run lint:functions && npm run lint:web",
+    "type-check:functions": "cd functions && npx tsc --noEmit",
+    "type-check:web": "cd web && npx tsc --noEmit",
+    "type-check": "npm run type-check:functions && npm run type-check:web",
+    "emulator": "firebase emulators:start",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:rules": "firebase deploy --only firestore:rules",
+    "deploy:functions": "npm run build:functions && firebase deploy --only functions --force",
+    "deploy:hosting": "npm run build:web && firebase deploy --only hosting"
+  }
+}

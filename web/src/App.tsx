@@ -1,18 +1,20 @@
 // =====================================================================
-// 가위바위보 챌린지 v2 — 클라이언트 진입점 (Foundation skeleton)
+// 가위바위보 챌린지 v2 — 클라이언트 진입점
 // =====================================================================
-// 본 파일은 M0 의 라우팅·페이즈 화면 stub 만 정의한다.
-// 실제 화면 구현은 M3 (T10~T13) 단계에서 진행.
+// 본 파일은 라우팅 + 5종 URL 파라미터 검증 + 익명 Auth 까지 처리한다.
+// 페이즈별 게임 화면(waiting/countdown/select/reveal/ended)은 M3
+// (T10~T13) 에서 본격 구현한다.
 //
 // 라우팅:
-//   /         → 검증용 진입 폼 (uid/clickKey 등 5종 파라미터 입력)
-//   /event    → 이벤트 게임 화면 (5종 파라미터 검증 + joinGame 호출)
+//   /         → 검증용 진입 폼 (uid/click_key 등 5종 파라미터 입력)
+//   /event    → 이벤트 게임 화면 (5종 파라미터 + 익명 Auth + joinGame)
 //   기타       → ErrorPage
 // =====================================================================
 
 import { useEffect, useState } from 'react'
 
 import s from './App.module.scss'
+import { ensureAnonymousAuth } from './firebase'
 import type { UrlParams } from './types'
 
 // =====================================================================
@@ -27,7 +29,7 @@ export default function App() {
       return (
         <ErrorPage
           title='⚠ 유효하지 않은 입장입니다'
-          description='필수 URL 파라미터(uid, click_key, pub_code, pub_app_code)가 누락되었습니다. 정상적인 경로로 다시 진입해주세요.'
+          description='필수 URL 파라미터(uid, click_key, pub_code, pub_app_code)가 누락되었거나 형식이 올바르지 않습니다. 정상적인 경로로 다시 진입해주세요.'
         />
       )
     }
@@ -40,6 +42,14 @@ export default function App() {
 // =====================================================================
 // URL 파라미터 파싱 — 5종 (uid, advertising_id, click_key, pub_code, pub_app_code)
 // =====================================================================
+// docs/guide/06 §6.6 정본:
+//   - uid, click_key, pub_code, pub_app_code 4종은 필수
+//   - advertising_id 는 nullable
+//   - 모든 값은 trim 후 빈 문자열 거부
+//   - 길이 제한은 보수적으로 1~256자 (DoS 방지 + 비정상 입력 차단)
+// =====================================================================
+const MAX_PARAM_LENGTH = 256
+
 function parseUrlParams(search: string): UrlParams | null {
   const sp = new URLSearchParams(search)
   const uid = sp.get('uid')?.trim() ?? ''
@@ -48,14 +58,25 @@ function parseUrlParams(search: string): UrlParams | null {
   const pub_code = sp.get('pub_code')?.trim() ?? ''
   const pub_app_code = sp.get('pub_app_code')?.trim() ?? ''
 
-  // advertising_id 는 nullable, 나머지 4종은 필수
+  // 필수 4종
   if (!uid || !click_key || !pub_code || !pub_app_code) return null
+
+  // 길이 검증 (DoS · 비정상 입력 차단)
+  if (
+    uid.length > MAX_PARAM_LENGTH ||
+    click_key.length > MAX_PARAM_LENGTH ||
+    pub_code.length > MAX_PARAM_LENGTH ||
+    pub_app_code.length > MAX_PARAM_LENGTH ||
+    (advertising_id !== null && advertising_id.length > MAX_PARAM_LENGTH)
+  ) {
+    return null
+  }
 
   return { uid, advertising_id, click_key, pub_code, pub_app_code }
 }
 
 // =====================================================================
-// 진입 페이지 (검증용) — uid/click_key/pub_code/pub_app_code 랜덤 생성
+// 진입 페이지 (검증용) — 5종 파라미터 랜덤 생성 + 입장
 // =====================================================================
 function RegisterPage() {
   const [uid, setUid] = useState('')
@@ -121,20 +142,57 @@ function RegisterPage() {
 }
 
 // =====================================================================
-// 이벤트 페이지 (M0 stub) — M3 (T10~T13) 에서 본격 구현
+// 이벤트 페이지 — 익명 Auth 발급 후 게임 화면 진입
+// =====================================================================
+// 흐름:
+//   1. 익명 Auth 로그인 (sessionStorage persistence — 탭별 독립)
+//   2. (M3 에서 추가) joinGame Callable 호출 → 입장 처리
+//   3. (M3 에서 추가) games/active onSnapshot 구독 → 페이즈별 화면 분기
 // =====================================================================
 function EventPage({ params }: { params: UrlParams }) {
-  const [phase, setPhase] = useState<'loading' | 'ready'>('loading')
+  const [authStatus, setAuthStatus] = useState<'loading' | 'ready' | 'error'>('loading')
+  const [firebaseUid, setFirebaseUid] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // M0 stub — 실제로는 ensureAnonymousAuth → joinGame 호출 → onSnapshot 구독
-    const t = setTimeout(() => setPhase('ready'), 500)
-    return () => clearTimeout(t)
+    let cancelled = false
+
+    ;(async () => {
+      try {
+        const user = await ensureAnonymousAuth()
+        if (cancelled) return
+        setFirebaseUid(user.uid)
+        setAuthStatus('ready')
+      } catch (e) {
+        if (cancelled) return
+        setError((e as Error).message)
+        setAuthStatus('error')
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  if (authStatus === 'error') {
+    return <ErrorPage title='⚠ 인증 실패' description={error ?? '익명 로그인 처리 중 문제가 발생했습니다.'} />
+  }
+
+  if (authStatus === 'loading') {
+    return (
+      <div className={s.container}>
+        <h1 className={s.title}>가위바위보 챌린지</h1>
+        <section className={`${s.panel} ${s.panelInfo}`}>
+          <div className={s.panelBody}>입장 처리 중...</div>
+        </section>
+      </div>
+    )
+  }
 
   return (
     <div className={s.container}>
-      <h1 className={s.title}>이벤트 페이지 (M0 skeleton)</h1>
+      <h1 className={s.title}>이벤트 페이지 (M1 — Auth 완료)</h1>
 
       <section className={`${s.panel} ${s.panelInfo}`}>
         <div className={s.panelHeader}>전달받은 URL 파라미터</div>
@@ -158,9 +216,12 @@ function EventPage({ params }: { params: UrlParams }) {
       </section>
 
       <section className={`${s.panel} ${s.panelInfo}`}>
-        <div className={s.panelHeader}>현재 상태</div>
+        <div className={s.panelHeader}>Firebase 인증 상태</div>
         <div className={s.panelBody}>
-          {phase === 'loading' ? '로딩 중...' : '준비 완료 (M3 에서 joinGame + 페이즈 화면 구현 예정)'}
+          <div>
+            익명 UID: <code>{firebaseUid}</code>
+          </div>
+          <div className={s.helper}>다음 단계: M2 에서 joinGame 호출 + 페이즈 화면 구현 예정</div>
         </div>
       </section>
     </div>
